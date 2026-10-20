@@ -2562,6 +2562,7 @@ function applyBulkEntry(){
     bulkLoadedCount = (_bulkMode==='replace') ? res.valid.length : (bulkLoadedCount + res.valid.length);
   }
 
+  try{ frRebuildFromSpins(); }catch(e){}
   saveState();updateAll();closeBulkEntry();
 }
 
@@ -6928,6 +6929,12 @@ function frProcessSpinCore(fsUpToHere, spin){
       }
     }
   }
+}
+// Full Step 10 state replay + redraw so entered spins immediately populate Step 10 and its graphs.
+function frRebuildFromSpins(){
+  try{ obRebuildLifeLog(); }catch(e){}
+  frRebuildLifeLog();
+  try{ if(typeof _bccOpen!=='undefined' && _bccOpen) renderBCC(); }catch(e){}
 }
 // Full replay from spins[0] — used after undo/edit/delete/window-change, same trigger points as obRebuildLifeLog.
 function frRebuildLifeLog(){
