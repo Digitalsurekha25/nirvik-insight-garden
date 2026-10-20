@@ -4735,8 +4735,8 @@ function renderBCC(){
     var frInner = '';
     if(!bccFrOn){
       frInner = '<div style="text-align:center;padding:16px 10px;color:rgba(255,255,255,.35);font-size:10.5px">Follower &amp; Style Rule Engine is off — switch it on above to see mined patterns, live follow guidance and table regime.</div>';
-    } else if(spins.length<15){
-      frInner = '<div style="text-align:center;padding:18px 10px;color:rgba(255,255,255,.42);font-size:10.5px"><b style="color:#facc15">COLLECT DATA</b><br>Need at least 15 spins entered before testing patterns — currently '+spins.length+' entered'+(fs.length<spins.length?' ('+fs.length+' in selected range)':'')+'. For stronger reads, use 50+ spins.</div>';
+    } else if(spins.length<2){
+      frInner = '<div style="text-align:center;padding:18px 10px;color:rgba(255,255,255,.42);font-size:10.5px"><b style="color:#facc15">COLLECT DATA</b><br>Need at least 2 spins entered before testing patterns — currently '+spins.length+' entered'+(fs.length<spins.length?' ('+fs.length+' in selected range)':'')+'. For stronger reads, use 50+ spins.</div>';
     } else {
       var frData=frSelectData(fs,bccFrScope);
       // Full, unsliced rule set — kept separately from the top-15 display table below. The Live
@@ -6192,7 +6192,7 @@ var FBD_SRC_DEFS=[
 ];
 // Best single advance target (highest lift that clears the sample bar) — same rules as 02's pool.
 function frAdvanceBest(fsArr){
-  if(!fsArr||fsArr.length<15) return null;
+  if(!fsArr||fsArr.length<2) return null;
   var latest=fsArr[fsArr.length-1]; if(latest===0) return null;
   var data=frSelectData(fsArr,bccFrScope);
   var styles=frMemo('sty',function(){return frStyleSummary(data,bccFrWindow);});
@@ -6221,7 +6221,7 @@ function frStep65Combo2(combo){
 }
 // One entry per trackable source: {key,nums}. Same engines as the render pool, one call each.
 function frSourceTargets(fsArr){
-  var out=[]; if(!fsArr||fsArr.length<15) return out;
+  var out=[]; if(!fsArr||fsArr.length<2) return out;
   function add(key,nums){ if(nums&&nums.length) out.push({key:key,nums:nums}); }
   var adv=frAdvanceBest(fsArr); if(adv) add('FR_ADV',adv.nums);
   var blt=frMemo('blt',function(){return frBestLiveTargets(fsArr);});
@@ -6289,9 +6289,9 @@ function fbdNearOf(nums){ // wheel pockets ±1 from the target, excluding the ta
 // Pool of every number-producing source for a history slice (same engines Steps 3/4/6.5/9 use).
 function fbdBuildPool(vfs,cmb,bb){
   var pool=[];
-  var fr=(vfs&&vfs.length>=15)?frMemo('alp8',function(){return frAllLivePreds(vfs,8);}):[];
+  var fr=(vfs&&vfs.length>=2)?frMemo('alp8',function(){return frAllLivePreds(vfs,8);}):[];
   fr.forEach(function(p){ pool.push({key:p.key,cat:'FR',tag:p.tag,label:p.label,nums:p.nums}); });
-  var tg=(vfs&&vfs.length>=15)?frMemo('trg',function(){return frTriggerLiveTarget(vfs);}):null;
+  var tg=(vfs&&vfs.length>=2)?frMemo('trg',function(){return frTriggerLiveTarget(vfs);}):null;
   if(tg&&tg.nums.length) pool.push({key:'FR_TRIG',cat:'FR',tag:'LIVE TRIGGER',label:'After '+vfs[vfs.length-1],nums:tg.nums});
   if(cmb){
     if(cmb.wheelNums&&cmb.wheelNums.length) pool.push({key:'CMB_WHEEL',cat:'COMBO',tag:'COMBO AI',label:'Wheel',nums:cmb.wheelNums});
@@ -6353,7 +6353,7 @@ function fbdSelectTarget(pool){
   return {active:active,count:count,votes:votes,labels:labels,max:max,thr:thr,top:top,eff:eff};
 }
 function fbdComputeTarget(vfs){
-  if(!vfs||vfs.length<15) return null;
+  if(!vfs||vfs.length<2) return null;
   var cmb=null,bb=null;
   try{ cmb=frMemo('cmb',function(){return genComboPred(vfs);}); }catch(e){}
   try{ bb=frMemo('exe',function(){return buildExecution(vfs);}); }catch(e){}
@@ -6581,7 +6581,7 @@ function fbdMultiLine(series){
 // you currently have shown. Reuses the same engines already powering Combo AI (genComboPred),
 // Coach Tiers (buildExecution) and the Step 9 FR engine (frAllLivePreds/frTriggerLiveTarget).
 function frFinalBetTargets(fsArr){
-  if(!fsArr || fsArr.length<15) return null;
+  if(!fsArr || fsArr.length<2) return null;
   var pool = frMemo('alp',function(){return frAllLivePreds(fsArr);}).slice();
   var trig = frMemo('trg',function(){return frTriggerLiveTarget(fsArr);});
   if(trig && trig.nums.length) pool.push({nums:trig.nums});
@@ -6664,7 +6664,7 @@ function frWindowPct(arr,n){
 // Deliberately mirrors that block's filters (qual>=bccFrMinSample, lift>0, non-empty live nums) —
 // keep both in sync if those filters ever change.
 function frAllLivePreds(fsArr,maxCombos){
-  if(!fsArr || fsArr.length<15) return [];
+  if(!fsArr || fsArr.length<2) return [];
   var data=frSelectData(fsArr,bccFrScope);
   var latest=fsArr[fsArr.length-1];
   var out=[];
@@ -6730,7 +6730,7 @@ function frRepeatNeighbors(a,trigger,K){
 // Live target for the just-landed number: needs at least bccFrMinSample past occurrences of that
 // number to trust the pattern, then keeps only neighbors that showed up near it 2+ separate times.
 function frRepeatNeighborTargets(fsArr){
-  if(!fsArr || fsArr.length<15) return null;
+  if(!fsArr || fsArr.length<2) return null;
   var trigger=fsArr[fsArr.length-1];
   var res=frRepeatNeighbors(fsArr,trigger,bccFrWindow);
   if(res.occ<bccFrMinSample) return null;
@@ -6743,7 +6743,7 @@ function frRepeatNeighborTargets(fsArr){
 // states before it's trusted. Only tracked when it clears that bar, so this measures exactly what
 // the green "FOLLOW" banner promises, not every WATCH/WAIT guess too.
 function frTriggerLiveTarget(fsArr){
-  if(!fsArr || fsArr.length<15) return null;
+  if(!fsArr || fsArr.length<2) return null;
   var data=frSelectData(fsArr,bccFrScope);
   var latest=fsArr[fsArr.length-1];
   var pairsAll=frMineFollowerPairs(data,bccFrWindow,bccFrMinSample,fsArr).filter(function(r){return r.lift>0;});
@@ -6759,7 +6759,7 @@ function frTriggerLiveTarget(fsArr){
 // user — 03 NEW STYLE COMBOS and 04 TABLE STYLE RANKING — using the same mining settings as the
 // render (bccFrScope / bccFrWindow / bccFrMinSample), so what's tracked matches what's on screen.
 function frBestLiveTargets(fsArr){
-  if(!fsArr || fsArr.length<15) return {combo:null,style:null};
+  if(!fsArr || fsArr.length<2) return {combo:null,style:null};
   var data=frSelectData(fsArr,bccFrScope);
   var latest=fsArr[fsArr.length-1];
   var out={combo:null,style:null};
@@ -6886,7 +6886,7 @@ function frProcessSpinCore(fsUpToHere, spin){
     }
   });
   if(!bccFrOn) return;
-  if(fsUpToHere.length>=15){
+  if(fsUpToHere.length>=2){
     var t=frMemo('blt',function(){return frBestLiveTargets(fsUpToHere);});
     if(!open.combo && t.combo) open.combo={nums:t.combo.nums,roundsChecked:0};
     if(!open.style && t.style) open.style={nums:t.style.nums,roundsChecked:0};
