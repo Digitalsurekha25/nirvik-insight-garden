@@ -5347,9 +5347,13 @@ function renderBCC(){
     tierHtml+=(clrRanked.length>=2
       ?'<div style="font-size:8px;color:rgba(255,255,255,.6);margin:6px 0 4px">🥇 Best so far: <b style="color:'+clrRanked[0].d.color+'">'+clrRanked[0].d.label+'</b> ('+(clrRanked[0].st.edge>=0?'+':'')+clrRanked[0].st.edge.toFixed(0)+' vs chance) · weakest: <b style="color:'+clrRanked[clrRanked.length-1].d.color+'">'+clrRanked[clrRanked.length-1].d.label+'</b> ('+(clrRanked[clrRanked.length-1].st.edge>=0?'+':'')+clrRanked[clrRanked.length-1].st.edge.toFixed(0)+')</div>'
       :'<div style="font-size:7.5px;color:rgba(255,255,255,.4);margin:6px 0 4px">Best / weakest tier unlocks once at least two tiers have '+FBD_MIN_CALLS+'+ settled windows (one window settles every '+bccFrWindow+' rounds, so this takes a while — windows never overlap, to keep the sample honest).</div>');
-    if(clrAny){
+    var tLiveCh=function(n){ return n>0?(1-Math.pow(1-Math.min(n,37)/37,bccFrWindow))*100:0; };
+    tierHtml+='<div style="margin:6px 0 4px;font-size:8px;font-weight:800;color:rgba(255,255,255,.7)">LIVE COUNT — '+clrData.slice().reverse().map(function(c){return '<span style="color:'+c.d.color+'">'+c.d.label+': '+c.live.length+' numbers</span>';}).join(' · ')+(clrAny?'':' <span style="font-weight:600;color:#f59e0b">· live preview (first window still open)</span>')+'</div>';
+    if(!clrRanked.length){ var clrProv=clrData.filter(function(c){return c.st;}).sort(function(a,b){return b.st.edge-a.st.edge;});
+      if(clrProv.length>=2) tierHtml+='<div style="font-size:7.5px;color:rgba(255,255,255,.55);margin-bottom:4px">Provisional leader: <b style="color:'+clrProv[0].d.color+'">'+clrProv[0].d.label+'</b> · trailing: <b style="color:'+clrProv[clrProv.length-1].d.color+'">'+clrProv[clrProv.length-1].d.label+'</b> (small sample)</div>'; }
+    if(true){
       tierHtml+='<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;margin-top:4px">'+
-        '<div><div style="font-size:7px;color:rgba(255,255,255,.4);margin-bottom:2px">HIT % vs CHANCE (same set sizes)</div>'+fbdBarChart(clrData.map(function(c){return {label:c.d.label==='SKY BLUE'?'SKY':c.d.label,color:c.d.color,has:!!c.st,pct:c.st?c.st.pct:0,chance:c.st?c.st.chance:0,n:c.st?c.st.n:0};}))+'</div>'+
+        '<div><div style="font-size:7px;color:rgba(255,255,255,.4);margin-bottom:2px">HIT % vs CHANCE (same set sizes)</div>'+fbdBarChart(clrData.map(function(c){return {label:c.d.label==='SKY BLUE'?'SKY':c.d.label,color:c.d.color,has:!!c.st||c.live.length>0,pct:c.st?c.st.pct:0,chance:c.st?c.st.chance:tLiveCh(c.live.length),n:c.st?c.st.n:0};}))+'</div>'+
         '<div><div style="font-size:7px;color:rgba(255,255,255,.4);margin-bottom:2px">EQUITY BY TIER (+1 hit / −1 miss, cumulative)</div>'+fbdMultiLine(clrData.map(function(c){return {color:c.d.color,outs:c.outs};}))+
           '<div style="display:flex;gap:8px;margin-top:2px;font-size:7px;color:rgba(255,255,255,.5)">'+clrData.map(function(c){var rs=fbdRunStats(c.outs);return '<span><span style="color:'+c.d.color+'">●</span> '+c.d.label.split(' ')[0]+' '+(rs.eq>=0?'+':'')+rs.eq+'u</span>';}).join('')+'</div></div></div>';
       // hit-by-round + streak per tier
@@ -5367,7 +5371,7 @@ function renderBCC(){
     tierHtml+=fbdTrackPanel('TIER PERFORMANCE TRACKER — predictions, hits & graphs per colour',clrData.map(function(c){return {label:c.d.label,color:c.d.color,arr:c.arr,liveN:c.live.length};}),bccFrWindow);
     var rkDefs=[{label:'RANK 1-5',color:'#f472b6',short:'1-5'},{label:'RANK 6-10',color:'#a78bfa',short:'6-10'},{label:'RANK 11+',color:'#94a3b8',short:'11+'}];
     var rkLive=[fbdTr.order.slice(0,5).length,fbdTr.order.slice(5,10).length,fbdTr.order.slice(10).length];
-    tierHtml+=fbdTrackPanel('CONFIDENCE RANK TRACKER — do the highest-ranked numbers hit more?',rkDefs.map(function(d,i){return {label:d.label,color:d.color,arr:fbdMapArr(cevAll,'rk',i),liveN:rkLive[i]};}),bccFrWindow)+
+    tierHtml+=fbdTrackPanel('CONFIDENCE RANK TRACKER — do the highest-ranked numbers hit more?',rkDefs.map(function(d,i){return {label:d.label,color:d.color,arr:fbdMapArr(cevAll,'rk',i),liveN:rkLive[i]};}),bccFrWindow)+fbdTapeHtml(cevAll,'rk',rkDefs)+
       '<div style="font-size:6.5px;color:rgba(255,255,255,.3);margin-top:3px">Rank buckets are recorded from now on for new windows (older windows had no rank snapshot).</div>';
     tierHtml+='<div style="font-size:6.5px;color:rgba(255,255,255,.3);line-height:1.5;margin-top:6px">Tiers are re-sorted every round, so a number can be RED in one window and SKY in the next — each window records the tier sets as they stood when it opened. CHANCE uses the tier\'s own set size. Small samples swing a lot; this is evidence about past windows, not a prediction.</div></div>';
     fbdInner+=tierHtml;
@@ -6528,13 +6532,22 @@ function fbdTrackPanel(title,groups,rounds){
       '<div style="display:flex;gap:2px;margin-top:3px">'+cell(g.arr.length,'PREDICTIONS')+cell(st?st.h:0,'HITS','#22c55e')+cell(g.miss,'MISSES','#ff6688')+cell(st?Math.round(st.pct)+'%':'—','HIT RATE',st?ec(st.edge):null)+'</div>'+
       '<div style="font-size:6.5px;color:rgba(255,255,255,.42);margin-top:3px;line-height:1.5">'+(st?('avg '+st.size.toFixed(1)+' numbers/prediction · '+g.bet+' numbers bet total · chance '+Math.round(st.chance)+'% · edge <b style="color:'+ec(st.edge)+'">'+(st.edge>=0?'+':'')+st.edge.toFixed(0)+'</b><br>avg hit round '+(st.avgR!==null?st.avgR.toFixed(1):'—')+' · streak '+g.rs.streakN+' '+(g.rs.streakT||'')+' · best '+g.rs.best+' · max DD −'+g.rs.maxDD+'u · '+fbdTierVerdict(st).t):'no settled predictions yet')+'</div></div>'; }).join('')+'</div>';
   var any=groups.some(function(g){return g.st;});
-  if(any){
+  var liveCh=function(n){ return n>0?(1-Math.pow(1-Math.min(n,37)/37,rounds))*100:0; };
+  var settledN=groups.reduce(function(a,g){return Math.max(a,g.st?g.st.n:0);},0);
+  h+='<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:6px;font-size:7.5px">'+
+    '<span style="padding:1px 6px;border-radius:9px;font-weight:900;background:'+(any?'rgba(34,197,94,.15)':'rgba(245,158,11,.18)')+';color:'+(any?'#22c55e':'#f59e0b')+'">'+(any?'● LIVE · '+settledN+' settled':'◐ LIVE PREVIEW · building first '+rounds+'-round window')+'</span>'+
+    '<span style="color:rgba(255,255,255,.55)">Live now: '+groups.map(function(g){return '<b style="color:'+g.color+'">'+g.label+': '+(g.liveN!=null?g.liveN:'—')+' numbers</b> ('+Math.round(liveCh(g.liveN||0))+'% chance)';}).join(' · ')+'</span></div>';
+  if(!any){
+    var lv=groups.filter(function(g){return g.liveN>0;}).sort(function(a,b){return b.liveN-a.liveN;});
+    if(lv.length) h+='<div style="font-size:7px;color:rgba(255,255,255,.45);margin-bottom:5px">Widest live coverage: <b style="color:'+lv[0].color+'">'+lv[0].label+'</b> · tightest: <b style="color:'+lv[lv.length-1].color+'">'+lv[lv.length-1].label+'</b> — hit/miss bars fill in as windows settle; grey bars show the chance each set has right now.</div>';
+  }
+  if(true){
     var ranked=groups.filter(function(g){return g.st;}).sort(function(a,b){return b.st.edge-a.st.edge;});
-    h+='<div style="font-size:7.5px;color:rgba(255,255,255,.6);margin-bottom:5px">🏆 Ranking by edge: '+ranked.map(function(g,i){return (i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1))+' <b style="color:'+g.color+'">'+g.label+'</b> '+(g.st.edge>=0?'+':'')+g.st.edge.toFixed(0)+' ('+Math.round(g.st.pct)+'%, n='+g.st.n+')';}).join(' · ')+
+    if(ranked.length) h+='<div style="font-size:7.5px;color:rgba(255,255,255,.6);margin-bottom:5px">🏆 Ranking by edge: '+ranked.map(function(g,i){return (i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1))+' <b style="color:'+g.color+'">'+g.label+'</b> '+(g.st.edge>=0?'+':'')+g.st.edge.toFixed(0)+' ('+Math.round(g.st.pct)+'%, n='+g.st.n+')';}).join(' · ')+
       (ranked.length>=2?' — <span style="color:#22c55e">working best: '+ranked[0].label+'</span> · <span style="color:#ff6688">worst: '+ranked[ranked.length-1].label+'</span>':'')+'</div>';
     var leg='<div style="display:flex;gap:8px;margin-top:2px;font-size:6.5px;color:rgba(255,255,255,.5)">'+groups.map(function(g){return '<span><span style="color:'+g.color+'">●</span> '+g.label+'</span>';}).join('')+'</div>';
     h+='<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start">'+
-      '<div><div style="font-size:7px;color:rgba(255,255,255,.4);margin-bottom:2px">HIT % vs CHANCE</div>'+fbdBarChart(groups.map(function(g){return {label:g.label.length>8?g.label.slice(0,8):g.label,color:g.color,has:!!g.st,pct:g.st?g.st.pct:0,chance:g.st?g.st.chance:0,n:g.st?g.st.n:0};}))+'</div>'+
+      '<div><div style="font-size:7px;color:rgba(255,255,255,.4);margin-bottom:2px">HIT % vs CHANCE</div>'+fbdBarChart(groups.map(function(g){return {label:g.label.length>8?g.label.slice(0,8):g.label,color:g.color,has:!!g.st||(g.liveN>0),pct:g.st?g.st.pct:0,chance:g.st?g.st.chance:liveCh(g.liveN||0),n:g.st?g.st.n:0};}))+'</div>'+
       '<div><div style="font-size:7px;color:rgba(255,255,255,.4);margin-bottom:2px">ROLLING HIT % (last 10 predictions)</div>'+fbdRollingLine(groups.map(function(g){return {color:g.color,outs:g.outs,chance:g.st?g.st.chance:null};}),10)+leg+'</div>'+
       '<div><div style="font-size:7px;color:rgba(255,255,255,.4);margin-bottom:2px">EQUITY (+1 hit / −1 miss)</div>'+fbdMultiLine(groups.map(function(g){return {color:g.color,outs:g.outs};}))+leg+'</div>'+
       '<div><div style="font-size:7px;color:rgba(255,255,255,.4);margin-bottom:2px">WHEN DID IT HIT — round within window (✗ = never)</div>'+fbdRoundHist(groups,rounds)+leg+'</div>'+
