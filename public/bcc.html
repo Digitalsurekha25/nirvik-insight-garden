@@ -4989,6 +4989,42 @@ function renderBCC(){
             '</div>'+
           '</div></div>';
 
+        // ── 🏅 CONFLUENCE PRIORITY RANKING — 3+ rules / 2 rules / 1 rule, each with a confidence
+        // score (avg score of the backing rules + agreement bonus), counts, backing rules and bet. ──
+        var frNumScore={}, frNumRules={};
+        frAllPreds.forEach(function(p){ p.nums.forEach(function(n){ frNumScore[n]=(frNumScore[n]||0)+p.score; (frNumRules[n]=frNumRules[n]||[]).push(p.tag+' · '+p.label); }); });
+        var frPrTiers=[{min:3,max:99,label:'RED · 3+ RULES',color:'#ff3355',bonus:15},{min:2,max:2,label:'YELLOW · 2 RULES',color:'#facc15',bonus:8},{min:1,max:1,label:'SKY BLUE · 1 RULE',color:'#38bdf8',bonus:0}];
+        var frTLog=execAnalytics.frTierLife||{sky:[],yellow:[],red:[]}, frTKeys=['red','yellow','sky'];
+        frPrTiers.forEach(function(t,i){
+          t.nums=Object.keys(frCountMap).map(Number).filter(function(n){return frCountMap[n]>=t.min&&frCountMap[n]<=t.max;});
+          var tot=0,cnt=0; t.nums.forEach(function(n){tot+=frNumScore[n]/frCountMap[n];cnt++;});
+          var base=cnt?tot/cnt:0, lg=frTLog[frTKeys[i]]||[], hp=lg.length?lg.filter(function(x){return !x.expired;}).length/lg.length*100:null;
+          t.score=cnt?Math.round(Math.min(95,(hp!==null&&lg.length>=5?(base*0.6+hp*0.4):base)+t.bonus)):0;
+          t.hist=hp!==null?(Math.round(hp)+'% ('+lg.length+')'):'—';
+          t.nums.sort(function(a,b){return frNumScore[b]-frNumScore[a];});
+          var rs={}; t.nums.forEach(function(n){frNumRules[n].forEach(function(r){rs[r]=1;});}); t.rules=Object.keys(rs);
+        });
+        var frPrSorted=frPrTiers.filter(function(t){return t.nums.length;}).sort(function(a,b){return b.score-a.score||b.min-a.min;});
+        frQuickHtml+='<div style="border-radius:9px;border:1px solid rgba(250,204,21,.25);background:rgba(250,204,21,.04);padding:8px 9px;margin-bottom:10px">'+
+          '<div style="font-size:9px;font-weight:800;color:#facc15;margin-bottom:3px">🏅 CONFLUENCE PRIORITY RANKING — by confidence</div>'+
+          '<div style="font-size:7.5px;color:rgba(255,255,255,.4);margin-bottom:7px">Sky Blue: '+frPrTiers[2].nums.length+' · Yellow: '+frPrTiers[1].nums.length+' · Red: '+frPrTiers[0].nums.length+' numbers. Score = avg rule confidence + agreement bonus, blended with the tier\'s live hit record once it has 5+ calls.</div>';
+        if(!frPrSorted.length) frQuickHtml+='<div style="font-size:8px;color:rgba(255,255,255,.35)">No tier numbers yet.</div>';
+        frPrSorted.forEach(function(t,i){
+          var sc=t.score>=65?'#22c55e':t.score>=40?'#facc15':'#ff6688';
+          frQuickHtml+='<div style="border-left:3px solid '+t.color+';border-radius:6px;background:rgba(0,0,0,.18);padding:6px 8px;margin-bottom:6px">'+
+            '<div style="display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap"><b style="font-size:9px;color:'+t.color+'">PRIORITY #'+(i+1)+' — '+t.label+'</b><span style="font-size:11px;font-weight:900;color:'+sc+'">'+t.score+'%</span></div>'+
+            '<div style="font-size:7.5px;color:rgba(255,255,255,.45);margin:2px 0 4px">'+t.nums.length+' numbers · tier live hit '+t.hist+'</div>'+
+            '<div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:4px">'+t.nums.map(function(n){return '<span title="'+frEsc(frNumRules[n].join(' | '))+'" style="font-size:8.5px;font-weight:800;padding:1px 5px;border-radius:4px;background:'+t.color+'22;border:1px solid '+t.color+'66;color:#fff">'+n+'<sup style="font-size:6px;opacity:.6"> ×'+frCountMap[n]+'</sup></span>';}).join('')+'</div>'+
+            '<div style="font-size:6.5px;color:rgba(255,255,255,.35);margin-bottom:4px">Rules: '+frEsc(t.rules.slice(0,6).join(', '))+(t.rules.length>6?' +'+(t.rules.length-6)+' more':'')+'</div>'+
+            frBetBtnHtml('FR_ADV',t.nums,t.label)+'</div>';
+        });
+        var frTopNums=Object.keys(frCountMap).map(Number).sort(function(a,b){return frCountMap[b]-frCountMap[a]||frNumScore[b]-frNumScore[a];}).slice(0,10);
+        if(frTopNums.length){
+          frQuickHtml+='<div style="font-size:8px;font-weight:800;color:rgba(255,255,255,.6);margin:6px 0 3px">TOP NUMBERS BY CONFLUENCE</div>'+
+            frTopNums.map(function(n,i){var c=frConfHeatColor(frCountMap[n]);return '<div style="display:grid;grid-template-columns:22px 28px 44px 1fr;gap:4px;font-size:8px;padding:2px 0;border-top:1px solid rgba(255,255,255,.04)"><span style="color:rgba(255,255,255,.35)">#'+(i+1)+'</span><b style="color:'+c+'">'+n+'</b><span style="color:rgba(255,255,255,.55)">'+frCountMap[n]+' rule'+(frCountMap[n]>1?'s':'')+'</span><span style="color:rgba(255,255,255,.35);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+frEsc(frNumRules[n].join(', '))+'</span></div>';}).join('');
+        }
+        frQuickHtml+='</div>';
+
         // ── Tier tracking — which color actually hits: each round, the sky/yellow/red number pools
         // above are opened as a combined pool "bet" and checked against the next bccFrWindow rounds
         // (see frProcessSpin), so this answers "is 1-rule, 2-rule or 3+-rule agreement worth
