@@ -5604,11 +5604,14 @@ function renderBCC(){
         '<span style="flex:none;width:1px;height:16px;background:rgba(255,255,255,.12);margin:0 2px"></span>'+
         bccFontControlsHtml()+'<button onclick="bccToggleNavSticky()" title="Toggle sticky / non-sticky" style="flex:none;padding:4px 8px;border-radius:6px;border:1px solid '+(bccNavSticky?'rgba(34,197,94,.4)':'rgba(255,255,255,.14)')+';background:'+(bccNavSticky?'rgba(34,197,94,.12)':'rgba(255,255,255,.05)')+';color:'+(bccNavSticky?'#22c55e':'rgba(255,255,255,.5)')+';font-size:9px;font-weight:800;cursor:pointer">📌 '+(bccNavSticky?'Sticky':'Non-sticky')+'</button>'+
         '<button onclick="bccToggleNavClosed()" title="Close nav bar" style="flex:none;padding:4px 8px;border-radius:6px;border:1px solid rgba(255,102,136,.35);background:rgba(255,102,136,.08);color:#ff6688;font-size:9px;font-weight:800;cursor:pointer">✕</button>'+
+        '<button onclick="bccToggleNavWrap()" title="Wrapped: every step visible in rows / Scroll: one compact scrollable row" style="flex:none;padding:4px 8px;border-radius:6px;border:1px solid '+(bccNavWrap?'rgba(122,240,255,.4)':'rgba(255,255,255,.14)')+';background:'+(bccNavWrap?'rgba(122,240,255,.1)':'rgba(255,255,255,.05)')+';color:'+(bccNavWrap?'#7af0ff':'rgba(255,255,255,.5)')+';font-size:9px;font-weight:800;cursor:pointer">'+(bccNavWrap?'⤶ Wrapped · all visible':'⇄ Scroll row')+'</button>'+
+        '<button onclick="bccToggleDualView()" title="Show STEP 6.5 wheel + STEP 9 confluence side by side" style="flex:none;padding:4px 8px;border-radius:6px;border:1px solid '+(bccDualView?'rgba(122,240,255,.5)':'rgba(255,255,255,.14)')+';background:'+(bccDualView?'rgba(122,240,255,.14)':'rgba(255,255,255,.05)')+';color:'+(bccDualView?'#7af0ff':'rgba(255,255,255,.55)')+';font-size:9px;font-weight:800;cursor:pointer">⬍ '+(bccDualView?'Dual view ON':'Dual view')+'</button>'+
       '</div>';
     }
 
     var finalHtml =
       navHtml +
+      (bccDualView ? bccDualViewHtml(wheelViewInner, frConfluenceCard) : '') +
       html + /* BCC INTELLIGENCE LAYER — Entry Signal / Hit-Flow / Readiness / Lifecycle */
       sec('STEP 0 — QUICK SETTINGS (Offset + Direction + Range)', '#d4a843', offInner, 'bcc-nav-s0') +
       sec('STEP 1 — DIRECTION INTELLIGENCE', '#22aaff', dirInner, 'bcc-nav-s1') +
