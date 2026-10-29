@@ -4962,6 +4962,7 @@ function renderBCC(){
       frAllPreds.sort(function(a,b){return b.score-a.score;});
 
       var frQuickHtml='<div style="font-size:9.5px;letter-spacing:1px;color:#facc15;font-weight:800;margin:4px 0 6px">⚡ BET HERE — PRIORITY LIST (BY CONFIDENCE)</div>';
+      var frConfluenceCard='';
       if(!frAllPreds.length){
         frQuickHtml+='<div style="font-size:9.5px;color:rgba(255,255,255,.35);margin-bottom:11px;padding:8px 9px;border-radius:8px;background:rgba(0,0,0,.14);border:1px solid rgba(255,255,255,.06)">No live target right now — either the last result doesn\'t trigger a qualifying rule, or nothing clears the sample/lift gates yet. Check 02–04 below.</div>';
       } else {
@@ -4974,7 +4975,7 @@ function renderBCC(){
         frAllPreds.forEach(function(p){ p.nums.forEach(function(n){ frCountMap[n]=(frCountMap[n]||0)+1; if(!frNumLabels[n])frNumLabels[n]=[]; frNumLabels[n].push(p.tag+' '+p.label); }); });
         var frMaxCnt=0; Object.keys(frCountMap).forEach(function(k){ if(frCountMap[k]>frMaxCnt) frMaxCnt=frCountMap[k]; });
         var frConfluenceNums=Object.keys(frCountMap).filter(function(k){return frCountMap[k]>=2;}).map(function(k){return parseInt(k);}).sort(function(a,b){return frCountMap[b]-frCountMap[a];});
-        frQuickHtml+='<div style="border-radius:9px;border:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.14);padding:8px 9px;margin-bottom:10px">'+
+        frConfluenceCard='<div style="border-radius:9px;border:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.14);padding:8px 9px;margin-bottom:10px">'+
           '<div style="font-size:9px;font-weight:800;color:rgba(255,255,255,.7);margin-bottom:6px">🔥 CONFLUENCE VIEW — all '+frAllPreds.length+' live prediction'+(frAllPreds.length===1?'':'s')+' overlaid (brighter = backed by more rules)</div>'+
           '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:7px;padding:5px 7px;border-radius:6px;background:rgba(0,0,0,.2)">'+
             '<span style="font-size:7.5px;color:rgba(255,255,255,.4);font-weight:800">COLOR KEY:</span>'+
@@ -4988,6 +4989,7 @@ function renderBCC(){
               (frConfluenceNums.length?('<span style="font-size:8px;color:rgba(255,255,255,.55)">'+frConfluenceNums.length+' number'+(frConfluenceNums.length===1?'':'s')+' hit by 2+ rules:</span><span style="font-size:8.5px;color:#facc15;font-weight:700">'+frConfluenceNums.join(', ')+'</span>'+frBetBtnHtml('FR_ADV',frConfluenceNums,'Confluence')):'<span style="font-size:8px;color:rgba(255,255,255,.35)">No overlap yet — every live pick points at different numbers.</span>')+
             '</div>'+
           '</div></div>';
+        frQuickHtml+=frConfluenceCard;
 
         // ── 🏅 CONFLUENCE PRIORITY RANKING — 3+ rules / 2 rules / 1 rule, each with a confidence
         // score (avg score of the backing rules + agreement bonus), counts, backing rules and bet. ──
