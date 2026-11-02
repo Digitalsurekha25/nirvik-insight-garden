@@ -5081,7 +5081,7 @@ function renderBCC(){
             frQuickHtml+='<div style="font-size:7.5px;color:rgba(255,255,255,.4);padding:4px 2px 0"><b style="color:'+frTierBest[0].tf.color+'">'+frTierBest[0].tf.label+'</b> is your best-proven tier so far, '+frTierBest[0].pct+'% from N='+frTierBest[0].n+'.</div>';
           }
         }
-        frQuickHtml+='</div>';
+        frQuickHtml+=frTierRoundAdviceHtml(frTiers)+'</div>';
 
         // Top 3 full visual cards, then a compact ranked list for the rest
         frAllPreds.slice(0,3).forEach(function(p,idx){
@@ -6947,16 +6947,27 @@ function frProcessSpinCore(fsUpToHere, spin){
   });
   // Every round's displayed tier pool is its own call (overlapping), so a prediction you saw after
   // any spin is counted when it hits in round 1, 2, 3… — not just the one pool opened earlier.
+  // Extended round tracker: every call is followed up to FR_TIER_XMAX rounds (beyond the follow
+  // window) so the exact hit round (R1…R10) is known and Auto Advice can name the best round range.
+  if(!execAnalytics.frTierLifeX) execAnalytics.frTierLifeX={sky:[],yellow:[],red:[]};
+  var txlog=execAnalytics.frTierLifeX;
   ['sky','yellow','red'].forEach(function(k){
     var arr=topen[k]; if(!arr) arr=[]; else if(!Array.isArray(arr)) arr=[arr];
+    if(!txlog[k]) txlog[k]=[];
     var keep=[];
     arr.forEach(function(o){
       o.roundsChecked++;
-      if(o.nums.indexOf(spin)>=0) tlog[k].push({hitRound:o.roundsChecked,expired:false});
-      else if(o.roundsChecked>=bccFrWindow) tlog[k].push({hitRound:null,expired:true});
-      else keep.push(o);
+      var hit=o.nums.indexOf(spin)>=0;
+      if(!o.done){
+        if(hit){ tlog[k].push({hitRound:o.roundsChecked,expired:false}); o.done=true; }
+        else if(o.roundsChecked>=bccFrWindow){ tlog[k].push({hitRound:null,expired:true}); o.done=true; }
+      }
+      if(hit){ txlog[k].push({r:o.roundsChecked,n:o.nums.length}); return; }
+      if(o.roundsChecked>=FR_TIER_XMAX){ txlog[k].push({r:null,n:o.nums.length}); return; }
+      keep.push(o);
     });
     while(tlog[k].length>300) tlog[k].shift();
+    while(txlog[k].length>300) txlog[k].shift();
     topen[k]=keep;
   });
   if(!bccFrOn) return;
