@@ -6945,15 +6945,19 @@ function frProcessSpinCore(fsUpToHere, spin){
       if(log[k].length>300) log[k].shift();
     }
   });
+  // Every round's displayed tier pool is its own call (overlapping), so a prediction you saw after
+  // any spin is counted when it hits in round 1, 2, 3… — not just the one pool opened earlier.
   ['sky','yellow','red'].forEach(function(k){
-    var o=topen[k];
-    if(o){
+    var arr=topen[k]; if(!arr) arr=[]; else if(!Array.isArray(arr)) arr=[arr];
+    var keep=[];
+    arr.forEach(function(o){
       o.roundsChecked++;
-      var hit=o.nums.indexOf(spin)>=0;
-      if(hit){ tlog[k].push({hitRound:o.roundsChecked,expired:false}); topen[k]=null; }
-      else if(o.roundsChecked>=bccFrWindow){ tlog[k].push({hitRound:null,expired:true}); topen[k]=null; }
-      if(tlog[k].length>300) tlog[k].shift();
-    }
+      if(o.nums.indexOf(spin)>=0) tlog[k].push({hitRound:o.roundsChecked,expired:false});
+      else if(o.roundsChecked>=bccFrWindow) tlog[k].push({hitRound:null,expired:true});
+      else keep.push(o);
+    });
+    while(tlog[k].length>300) tlog[k].shift();
+    topen[k]=keep;
   });
   if(!bccFrOn) return;
   if(fsUpToHere.length>=2){
@@ -6962,7 +6966,7 @@ function frProcessSpinCore(fsUpToHere, spin){
     if(!open.style && t.style) open.style={nums:t.style.nums,roundsChecked:0};
     var tiers=frComputeTierNums(fsUpToHere);
     ['sky','yellow','red'].forEach(function(k){
-      if(!topen[k] && tiers[k] && tiers[k].length) topen[k]={nums:tiers[k],roundsChecked:0};
+      if(tiers[k] && tiers[k].length) topen[k].push({nums:tiers[k],roundsChecked:0});
     });
     if(!execAnalytics.frNeighOpen){
       var nt=frMemo('rnt',function(){return frRepeatNeighborTargets(fsUpToHere);});
