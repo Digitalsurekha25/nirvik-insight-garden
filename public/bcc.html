@@ -5081,7 +5081,7 @@ function renderBCC(){
             frQuickHtml+='<div style="font-size:7.5px;color:rgba(255,255,255,.4);padding:4px 2px 0"><b style="color:'+frTierBest[0].tf.color+'">'+frTierBest[0].tf.label+'</b> is your best-proven tier so far, '+frTierBest[0].pct+'% from N='+frTierBest[0].n+'.</div>';
           }
         }
-        frQuickHtml+='</div>';
+        frQuickHtml+=frTierRoundAdviceHtml(frTiers)+'</div>';
 
         // Top 3 full visual cards, then a compact ranked list for the rest
         frAllPreds.slice(0,3).forEach(function(p,idx){
@@ -5993,6 +5993,56 @@ function frRowVizHtml(id,nums,vizType){
 }
 var bccFrWindow = (function(){ try{ var v=parseInt(localStorage.getItem('bccFrWindow')); return (v>=2&&v<=10)?v:3; }catch(e){ return 3; } })();
 function bccSetFrWindow(w){ w=parseInt(w); if(!(w>=2&&w<=10)) return; bccFrWindow=w; try{localStorage.setItem('bccFrWindow', String(w));}catch(e){} setTimeout(renderBCC,30); }
+var FR_TIER_XMAX=10;
+// 🎯 ROUND AUTO ADVICE — per tier: which round (R1…R10) hits actually land on, the best 1–3 round
+// range vs pure chance for that pool size, and a USE / WATCH / AVOID verdict.
+function frTierRoundAdviceHtml(tiers){
+  var X=(execAnalytics.frTierLifeX)||{};
+  var h='<div style="margin-top:8px;padding:7px 8px;border-radius:7px;border:1px solid rgba(122,240,255,.22);background:rgba(122,240,255,.04)">'+
+    '<div style="font-size:8.5px;font-weight:900;color:#7af0ff;margin-bottom:2px">🎯 ROUND AUTO ADVICE — which round hits land on (R1 → R'+FR_TIER_XMAX+')</div>'+
+    '<div style="font-size:7px;color:rgba(255,255,255,.38);line-height:1.4;margin-bottom:6px">Every tier prediction is followed up to '+FR_TIER_XMAX+' rounds. Bars show where first hits landed; green = above chance, red = below. Advice names the best round range to play and whether to use or avoid.</div>';
+  tiers.forEach(function(tf){
+    var arr=X[tf.key]||[], N=arr.length;
+    if(!N){ h+='<div style="font-size:7.5px;color:rgba(255,255,255,.3);margin-bottom:4px"><b style="color:'+tf.color+'">'+tf.label+'</b> — tracking… needs a few spins</div>'; return; }
+    var obs=[],exp=[];
+    for(var r=1;r<=FR_TIER_XMAX;r++){
+      obs.push(arr.filter(function(x){return x.r===r;}).length);
+      exp.push(arr.reduce(function(s,x){var p=Math.min(x.n,37)/37;return s+Math.pow(1-p,r-1)*p;},0));
+    }
+    var never=arr.filter(function(x){return x.r===null;}).length;
+    var mx=Math.max.apply(null,obs.concat([1]));
+    var bars=obs.map(function(c,i){
+      var good=c>=exp[i]; var ht=Math.max(2,Math.round(c/mx*26));
+      return '<div title="R'+(i+1)+': '+c+' hits (chance ≈'+exp[i].toFixed(1)+')" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:38px">'+
+        '<div style="font-size:6px;color:rgba(255,255,255,.55)">'+c+'</div>'+
+        '<div style="width:80%;height:'+ht+'px;border-radius:2px;background:'+(c===0?'rgba(255,255,255,.08)':good?'#22c55e':'#ff6688')+'"></div>'+
+        '<div style="font-size:6px;color:rgba(255,255,255,.4)">R'+(i+1)+'</div></div>';
+    }).join('');
+    // best contiguous range of width 1–3 by (observed − expected)
+    var best=null;
+    for(var w=1;w<=3;w++) for(var a=0;a+w<=FR_TIER_XMAX;a++){
+      var o=0,e=0; for(var j=a;j<a+w;j++){o+=obs[j];e+=exp[j];}
+      var edge=(o-e)/N; if(!best||edge>best.edge+0.005) best={a:a+1,b:a+w,o:o,e:e,edge:edge};
+    }
+    var hitsAll=N-never, cumObs=0,cumExp=0; for(var q=0;q<bccFrWindow;q++){cumObs+=obs[q];cumExp+=exp[q];}
+    var winEdge=(cumObs-cumExp)/N*100;
+    var verdict,vc;
+    if(N<8){verdict='WATCH — small sample ('+N+')';vc='#facc15';}
+    else if(best.edge>0.05&&winEdge>=0){verdict='USE';vc='#22c55e';}
+    else if(winEdge<-5&&best.edge<=0.02){verdict='AVOID';vc='#ff6688';}
+    else {verdict='WATCH';vc='#facc15';}
+    var rng=best.a===best.b?('round '+best.a):('rounds '+best.a+'–'+best.b);
+    var advice = best.edge>0
+      ? 'Hits land most in <b style="color:#fff">'+rng+'</b> ('+best.o+' hits vs '+best.e.toFixed(1)+' by chance). '+(verdict==='AVOID'?'Overall below chance — avoid.':'Play this tier from R'+best.a+' to R'+best.b+'; stop after R'+best.b+'.')
+      : 'No round range beats chance yet — avoid or wait for more data.';
+    h+='<div style="padding:5px 6px;border-radius:6px;background:rgba(0,0,0,.18);margin-bottom:5px">'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px"><b style="font-size:8px;color:'+tf.color+'">'+tf.label+'</b><span style="font-size:8.5px;font-weight:900;color:'+vc+'">'+verdict+'</span></div>'+
+      '<div style="display:flex;gap:2px;align-items:flex-end;margin-bottom:3px">'+bars+'</div>'+
+      '<div style="font-size:7px;color:rgba(255,255,255,.6);line-height:1.4">'+advice+'</div>'+
+      '<div style="font-size:6.5px;color:rgba(255,255,255,.35);margin-top:2px">Calls '+N+' · hit within '+FR_TIER_XMAX+': '+hitsAll+' · never: '+never+' · within your '+bccFrWindow+'-round window: '+cumObs+' ('+(winEdge>=0?'+':'')+winEdge.toFixed(0)+'% vs chance)</div></div>';
+  });
+  return h+'</div>';
+}
 var bccFrScope = (function(){ try{ var v=localStorage.getItem('bccFrScope'); return ['SMART','L50','L100','ALL'].indexOf(v)>=0?v:'SMART'; }catch(e){ return 'SMART'; } })();
 function bccSetFrScope(v){ if(['SMART','L50','L100','ALL'].indexOf(v)<0)return; bccFrScope=v;try{localStorage.setItem('bccFrScope',v);}catch(e){}setTimeout(renderBCC,30); }
 var bccFrMinSample = (function(){ try{ var v=parseInt(localStorage.getItem('bccFrMinSample')); return [3,4,6,8,10].indexOf(v)>=0?v:4; }catch(e){ return 4; } })();
@@ -6947,16 +6997,27 @@ function frProcessSpinCore(fsUpToHere, spin){
   });
   // Every round's displayed tier pool is its own call (overlapping), so a prediction you saw after
   // any spin is counted when it hits in round 1, 2, 3… — not just the one pool opened earlier.
+  // Extended round tracker: every call is followed up to FR_TIER_XMAX rounds (beyond the follow
+  // window) so the exact hit round (R1…R10) is known and Auto Advice can name the best round range.
+  if(!execAnalytics.frTierLifeX) execAnalytics.frTierLifeX={sky:[],yellow:[],red:[]};
+  var txlog=execAnalytics.frTierLifeX;
   ['sky','yellow','red'].forEach(function(k){
     var arr=topen[k]; if(!arr) arr=[]; else if(!Array.isArray(arr)) arr=[arr];
+    if(!txlog[k]) txlog[k]=[];
     var keep=[];
     arr.forEach(function(o){
       o.roundsChecked++;
-      if(o.nums.indexOf(spin)>=0) tlog[k].push({hitRound:o.roundsChecked,expired:false});
-      else if(o.roundsChecked>=bccFrWindow) tlog[k].push({hitRound:null,expired:true});
-      else keep.push(o);
+      var hit=o.nums.indexOf(spin)>=0;
+      if(!o.done){
+        if(hit){ tlog[k].push({hitRound:o.roundsChecked,expired:false}); o.done=true; }
+        else if(o.roundsChecked>=bccFrWindow){ tlog[k].push({hitRound:null,expired:true}); o.done=true; }
+      }
+      if(hit){ txlog[k].push({r:o.roundsChecked,n:o.nums.length}); return; }
+      if(o.roundsChecked>=FR_TIER_XMAX){ txlog[k].push({r:null,n:o.nums.length}); return; }
+      keep.push(o);
     });
     while(tlog[k].length>300) tlog[k].shift();
+    while(txlog[k].length>300) txlog[k].shift();
     topen[k]=keep;
   });
   if(!bccFrOn) return;
@@ -7014,6 +7075,7 @@ function frRebuildLifeLog(){
   execAnalytics.frLife={combo:[],style:[]};
   execAnalytics.frOpen={combo:null,style:null};
   execAnalytics.frTierLife={sky:[],yellow:[],red:[]};
+  execAnalytics.frTierLifeX={sky:[],yellow:[],red:[]};
   execAnalytics.frTierOpen={sky:null,yellow:null,red:null};
   execAnalytics.frNeighLife=[];
   execAnalytics.frNeighOpen=null;
