@@ -8940,7 +8940,7 @@ var tpState=(function(){
   return {enabled:false,rows:[],filter:'all'};
 })();
 function tpPersist(){try{localStorage.setItem('bccTablePulse_v1',JSON.stringify(tpState));}catch(e){}}
-function tpToggleEnabled(){tpState.enabled=!tpState.enabled;tpPersist();renderTablePulse();}
+function tpToggleEnabled(){tpState.enabled=!tpState.enabled;tpPersist();renderTablePulse();if(typeof _bccOpen!=='undefined'&&_bccOpen)renderBCC();}
 function tpSetFilter(v){if(['all','above','below'].indexOf(v)<0)return;tpState.filter=v;tpPersist();renderTablePulse();}
 function tpMoney(v){return '₹'+Number(v).toLocaleString('en-IN',{minimumFractionDigits:0,maximumFractionDigits:2})+' L';}
 function tpMean(a){return a.length?a.reduce(function(s,v){return s+v;},0)/a.length:null;}
