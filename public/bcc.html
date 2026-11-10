@@ -2757,7 +2757,7 @@ function renderBCC(){
     var fs    = getFS();
     if(cnt) cnt.textContent = fs.length + ' SPINS';
     if(fs.length < 1){
-      body.innerHTML = '<div style="font-size:.75em;color:rgba(255,255,255,.4);text-align:center;padding:32px 12px;border:1px dashed rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.015)"><div style="font-size:22px;margin-bottom:8px;opacity:.6">⚡</div><div style="font-weight:700;letter-spacing:1px;color:rgba(255,255,255,.6);margin-bottom:4px">STANDBY</div>Add 4+ spins to activate command center.<div style="margin-top:8px;font-size:.85em;opacity:.6">'+fs.length+' / 4 spins</div></div>';
+      body.innerHTML = bccTablePulseHtml() + '<div style="font-size:.75em;color:rgba(255,255,255,.4);text-align:center;padding:32px 12px;border:1px dashed rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.015)"><div style="font-size:22px;margin-bottom:8px;opacity:.6">⚡</div><div style="font-weight:700;letter-spacing:1px;color:rgba(255,255,255,.6);margin-bottom:4px">STANDBY</div>Add 4+ spins to activate command center.<div style="margin-top:8px;font-size:.85em;opacity:.6">'+fs.length+' / 4 spins</div></div>';
       return;
     }
 
