@@ -1771,10 +1771,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-ui);min-heigh
     </div>
     <div id="tpDisabled" style="padding:12px;border:1px dashed var(--bdr2);border-radius:7px;color:var(--muted2);font-size:.82em;line-height:1.6">Table Pulse is off. Turn it on to record each round's reported table payout and optional winner count. It does not change roulette predictions.</div>
     <div id="tpWorkspace" style="display:none">
-      <div style="font-size:.78em;color:var(--muted2);line-height:1.6;margin-bottom:10px">Record the table's <b style="color:var(--text)">gross payout in ₹ lakhs</b> and optional number of winning players after each round. This is a payout observation log, not true RTP: wager totals are not collected, and payout patterns do not establish where the next ball will land.</div>
+      <div style="font-size:.78em;color:var(--muted2);line-height:1.6;margin-bottom:10px">Record the table's <b style="color:var(--text)">gross payout</b> in ₹ lakhs or crores and optional number of winning players after each round. This is a payout observation log, not true RTP: wager totals are not collected, and payout patterns do not establish where the next ball will land.</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:8px;align-items:end;margin-bottom:8px">
-        <label style="display:grid;gap:4px;font-size:.72em;color:var(--muted2)">TOTAL TABLE PAYOUT (₹ LAKHS)
-          <input id="tpPayout" type="number" min="0" step="0.01" inputmode="decimal" placeholder="e.g. 24" onkeydown="if(event.key==='Enter')tpAddEntry()" style="width:100%;min-height:40px;background:var(--c2);border:1px solid var(--bdr2);border-radius:6px;color:var(--text);padding:8px;font:inherit;font-size:1em">
+        <label style="display:grid;gap:4px;font-size:.72em;color:var(--muted2)">TOTAL TABLE PAYOUT <span id="tpUnitLabel">(₹ LAKHS)</span>
+          <div style="display:flex;gap:5px"><input id="tpPayout" type="number" min="0" step="0.01" inputmode="decimal" placeholder="e.g. 24" onkeydown="if(event.key==='Enter')tpAddEntry()" style="flex:1;min-width:0;min-height:40px;background:var(--c2);border:1px solid var(--bdr2);border-radius:6px;color:var(--text);padding:8px;font:inherit;font-size:1em"><select id="tpUnit" aria-label="Payout unit" onchange="tpSetUnit(this.value)" style="min-height:40px;background:var(--c2);border:1px solid var(--bdr2);border-radius:6px;color:var(--text);padding:6px;font:inherit"><option value="lakhs">₹ Lakhs</option><option value="crores">₹ Crores</option></select></div>
         </label>
         <label style="display:grid;gap:4px;font-size:.72em;color:var(--muted2)">PLAYERS WHO WON <span style="font-size:.9em">Optional</span>
           <input id="tpWinners" type="number" min="0" step="1" inputmode="numeric" placeholder="e.g. 175" onkeydown="if(event.key==='Enter')tpAddEntry()" style="width:100%;min-height:40px;background:var(--c2);border:1px solid var(--bdr2);border-radius:6px;color:var(--text);padding:8px;font:inherit;font-size:1em">
@@ -1782,6 +1782,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-ui);min-heigh
         <button onclick="tpAddEntry()" style="min-height:40px;padding:8px 14px;border:1px solid rgba(34,197,94,.45);border-radius:6px;background:rgba(34,197,94,.12);color:#22c55e;font:inherit;font-weight:800;cursor:pointer">＋ LOG ROUND</button>
       </div>
       <div id="tpFeedback" aria-live="polite" style="min-height:18px;margin-bottom:8px;font-size:.74em;color:var(--muted2)"></div>
+      <div id="tpWaveAdvice" aria-live="polite" style="margin:0 0 10px;padding:10px;border:1px solid var(--bdr);border-left:3px solid #d4a843;border-radius:6px;background:var(--c2)"></div>
       <div id="tpStats" class="sgrid"></div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr));gap:9px;margin:8px 0">
         <div style="padding:9px;background:var(--c2);border:1px solid var(--bdr);border-radius:7px;min-width:0">
